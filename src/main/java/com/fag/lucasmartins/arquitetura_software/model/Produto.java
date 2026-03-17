@@ -1,5 +1,7 @@
 package com.fag.lucasmartins.arquitetura_software.model;
 
+import java.util.Objects;
+
 public class Produto {
     private Long id;
     private String nome;
@@ -8,14 +10,37 @@ public class Produto {
     private int estoque;
 
     public Produto(String nome, double preco, int estoque) {
-        this.nome = nome;
+        Objects.requireNonNull(nome, "Nome não pode ser null");
+        
+        if (nome.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nome não pode ser vazio");
+        }
+        if (preco <= 0) {
+            throw new IllegalArgumentException("Preço deve ser maior que zero");
+        }
+        if (estoque < 0) {
+            throw new IllegalArgumentException("Estoque não pode ser negativo");
+        }
+        
+        this.nome = nome.trim();
         this.preco = preco;
         this.estoque = estoque;
         this.precoFinal = calcularPrecoFinal();
     }
 
     public void validar() {
-        if (nome != null && nome.toLowerCase().contains("premium")) {
+        if (nome == null || nome.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nome não pode ser null ou vazio");
+        }
+        if (preco <= 0) {
+            throw new IllegalArgumentException("Preço deve ser maior que zero");
+        }
+        if (estoque < 0) {
+            throw new IllegalArgumentException("Estoque não pode ser negativo");
+        }
+        
+        // Validação específica para produtos premium
+        if (nome.toLowerCase().contains("premium")) {
             if (preco < 100.0) {
                 throw new IllegalArgumentException("Produtos Premium não podem custar menos de R$ 100,00.");
             }
@@ -43,7 +68,11 @@ public class Produto {
     }
 
     public void setNome(String nome) {
-        this.nome = nome;
+        Objects.requireNonNull(nome, "Nome não pode ser null");
+        if (nome.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nome não pode ser vazio");
+        }
+        this.nome = nome.trim();
     }
 
     public double getPreco() {
@@ -51,6 +80,9 @@ public class Produto {
     }
 
     public void setPreco(double preco) {
+        if (preco <= 0) {
+            throw new IllegalArgumentException("Preço deve ser maior que zero");
+        }
         this.preco = preco;
         this.precoFinal = calcularPrecoFinal();
     }
@@ -64,6 +96,9 @@ public class Produto {
     }
 
     public void setEstoque(int estoque) {
+        if (estoque < 0) {
+            throw new IllegalArgumentException("Estoque não pode ser negativo");
+        }
         this.estoque = estoque;
         this.precoFinal = calcularPrecoFinal();
     }
