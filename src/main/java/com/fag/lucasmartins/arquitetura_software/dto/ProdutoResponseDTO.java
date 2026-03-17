@@ -1,6 +1,7 @@
 package com.fag.lucasmartins.arquitetura_software.dto;
 
 public class ProdutoResponseDTO {
+    private Long id;
     private String mensagem;
     private String nome;
     private int estoque;
@@ -18,6 +19,14 @@ public class ProdutoResponseDTO {
     }
 
     // Getters e Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getMensagem() {
         return mensagem;
     }

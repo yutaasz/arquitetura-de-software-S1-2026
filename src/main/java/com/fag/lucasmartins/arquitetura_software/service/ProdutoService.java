@@ -1,136 +1,72 @@
 package com.fag.lucasmartins.arquitetura_software.service;
 
+import com.fag.lucasmartins.arquitetura_software.model.bo.ProdutoBO;
 import com.fag.lucasmartins.arquitetura_software.model.Produto;
 import com.fag.lucasmartins.arquitetura_software.repository.ProdutoRepository;
 import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class ProdutoService implements IProdutoService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProdutoService.class);
     private final ProdutoRepository produtoRepository;
 
     public ProdutoService(ProdutoRepository produtoRepository) {
-        this.produtoRepository = Objects.requireNonNull(produtoRepository, "ProdutoRepository não pode ser null");
+        this.produtoRepository = produtoRepository;
     }
 
     @Override
-    public List<Produto> obterTodosProdutos() {
-        logger.info("Obtendo todos os produtos");
-        try {
-            List<Produto> produtos = produtoRepository.obterTodos();
-            return produtos != null ? produtos : List.of();
-        } catch (Exception e) {
-            logger.error("Erro ao obter todos os produtos", e);
-            throw new RuntimeException("Erro ao obter produtos do banco de dados", e);
+    public ProdutoBO criarProduto(ProdutoBO produtoBO) {
+        Produto produto = new Produto(produtoBO.getNome(), produtoBO.getPreco(), produtoBO.getEstoque());
+        produtoRepository.salvar(produto);
+        
+        List<Produto> todos = produtoRepository.obterTodos();
+        if (todos != null && !todos.isEmpty()) {
+            Produto ultimo = todos.get(todos.size() - 1);
+            produtoBO.setId(ultimo.getId());
         }
+        
+        return produtoBO;
     }
 
     @Override
-    public Produto cadastrarProduto(String nome, double preco, int estoque) {
-        logger.info("Cadastrando produto: {}", nome);
+    public ProdutoBO obterPrimeiro() {
+        List<Produto> produtos = produtoRepository.obterTodos();
         
-        Objects.requireNonNull(nome, "Nome do produto não pode ser null");
+        if (produtos == null || produtos.isEmpty()) {
+            return null;
+        }
         
-        if (nome.trim().isEmpty()) {
-            throw new IllegalArgumentException("Nome do produto não pode ser vazio");
-        }
-        if (preco <= 0) {
-            throw new IllegalArgumentException("Preço deve ser maior que zero");
-        }
-        if (estoque < 0) {
-            throw new IllegalArgumentException("Estoque não pode ser negativo");
-        }
-
-        try {
-            Produto produto = new Produto(nome.trim(), preco, estoque);
-            produto.validar();
-            produtoRepository.salvar(produto);
-            logger.info("Produto cadastrado com sucesso: {}", nome);
-            return produto;
-        } catch (IllegalArgumentException e) {
-            logger.warn("Validação falhou ao cadastrar produto: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.error("Erro ao cadastrar produto", e);
-            throw new RuntimeException("Erro ao salvar produto no banco de dados", e);
-        }
+        Produto primeiro = produtos.get(0);
+        return new ProdutoBO(primeiro.getId(), primeiro.getNome(), primeiro.getPreco(), primeiro.getEstoque());
     }
 
     @Override
-    public Produto atualizarProduto(Long id, String nome, double preco, int estoque) {
-        logger.info("Atualizando produto com ID: {}", id);
+    public ProdutoBO atualizarProduto(ProdutoBO produtoBO) {
+        Produto produto = produtoRepository.obterPorId(produtoBO.getId());
         
-        Objects.requireNonNull(id, "ID do produto não pode ser null");
-        Objects.requireNonNull(nome, "Nome do produto não pode ser null");
+        if (produto == null) {
+            throw new RuntimeException("Produto não encontrado.");
+        }
         
-        if (id <= 0) {
-            throw new IllegalArgumentException("ID deve ser maior que zero");
-        }
-        if (nome.trim().isEmpty()) {
-            throw new IllegalArgumentException("Nome do produto não pode ser vazio");
-        }
-        if (preco <= 0) {
-            throw new IllegalArgumentException("Preço deve ser maior que zero");
-        }
-        if (estoque < 0) {
-            throw new IllegalArgumentException("Estoque não pode ser negativo");
-        }
-
-        try {
-            Produto produto = produtoRepository.obterPorId(id);
-            
-            if (produto == null) {
-                logger.warn("Produto com ID {} não encontrado", id);
-                return null;
-            }
-
-            produto.setNome(nome.trim());
-            produto.setPreco(preco);
-            produto.setEstoque(estoque);
-            produto.validar();
-            
-            produtoRepository.atualizar(produto);
-            logger.info("Produto atualizado com sucesso: {}", id);
-            return produto;
-        } catch (IllegalArgumentException e) {
-            logger.warn("Validação falhou ao atualizar produto: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.error("Erro ao atualizar produto", e);
-            throw new RuntimeException("Erro ao atualizar produto no banco de dados", e);
-        }
+        produto.setNome(produtoBO.getNome());
+        produto.setPreco(produtoBO.getPreco());
+        produto.setEstoque(produtoBO.getEstoque());
+        
+        produtoRepository.atualizar(produto);
+        
+        return produtoBO;
     }
 
     @Override
-    public boolean deletarProduto(Long id) {
-        logger.info("Deletando produto com ID: {}", id);
+    public void deletarProduto(Long id) {
+        Produto produto = produtoRepository.obterPorId(id);
         
-        Objects.requireNonNull(id, "ID do produto não pode ser null");
+        if (produto == null) {
+            throw new RuntimeException("Produto não encontrado.");
+        }
         
-        if (id <= 0) {
-            throw new IllegalArgumentException("ID deve ser maior que zero");
-        }
-
-        try {
-            Produto produto = produtoRepository.obterPorId(id);
-            
-            if (produto == null) {
-                logger.warn("Produto com ID {} não encontrado para deletar", id);
-                return false;
-            }
-
-            produtoRepository.deletar(id);
-            logger.info("Produto deletado com sucesso: {}", id);
-            return true;
-        } catch (Exception e) {
-            logger.error("Erro ao deletar produto", e);
-            throw new RuntimeException("Erro ao deletar produto do banco de dados", e);
-        }
+        produtoRepository.deletar(id);
     }
 }
